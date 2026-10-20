@@ -3,101 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AETHER Lane — kioskos ingreso / salida</title>
+  <title>AETHER Lane — visor 3D</title>
   <style>
     :root {
-      --bg: #0e1114;
-      --panel: #171b20;
-      --line: #2a3138;
-      --text: #e8edf1;
-      --muted: #8b959e;
+      --bg: #1a2430;
+      --panel: rgba(22, 30, 40, 0.88);
+      --line: #3d4d5c;
+      --text: #f2f6f8;
+      --muted: #a8b4bf;
       --accent: #3ee0d8;
-      --amber: #e8a020;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.45 "Segoe UI", system-ui, sans-serif; }
-    #app { display: grid; grid-template-columns: 280px 1fr 300px; height: 100%; }
-    aside, .spec {
-      background: var(--panel);
-      border-right: 1px solid var(--line);
-      padding: 20px 18px;
-      overflow: auto;
+    #view { position: fixed; inset: 0; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .bar {
+      position: fixed; z-index: 2; top: 16px; left: 16px; width: 268px;
+      background: var(--panel); border: 1px solid var(--line); padding: 16px;
+      backdrop-filter: blur(10px);
     }
-    .spec { border-right: 0; border-left: 1px solid var(--line); }
-    h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; letter-spacing: 0.04em; }
-    .sub { color: var(--muted); margin-bottom: 22px; font-size: 12px; }
-    label { display: block; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; }
-    button.opt, select {
-      width: 100%;
-      background: #101417;
+    .spec {
+      position: fixed; z-index: 2; top: 16px; right: 16px; width: 250px;
+      background: var(--panel); border: 1px solid var(--line); padding: 16px;
+      backdrop-filter: blur(10px);
+    }
+    h1 { font-size: 16px; margin: 0 0 4px; font-weight: 600; }
+    .sub { color: var(--muted); font-size: 12px; margin: 0 0 14px; }
+    label { display: block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 12px 0 6px; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; }
+    button.opt {
+      flex: 1 1 auto;
+      background: #121820;
       color: var(--text);
       border: 1px solid var(--line);
-      padding: 9px 10px;
-      margin: 0 0 6px;
+      padding: 8px 8px;
       cursor: pointer;
-      text-align: left;
+      font-size: 12px;
     }
-    button.opt.active { border-color: var(--accent); color: var(--accent); }
-    input[type="range"] { width: 100%; }
-    #view { position: relative; }
-    canvas { display: block; width: 100%; height: 100%; }
-    .hud {
-      position: absolute; left: 16px; bottom: 16px;
-      color: var(--muted); font-size: 12px; pointer-events: none;
-    }
+    button.opt.active { border-color: var(--accent); color: var(--accent); background: #102428; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { padding: 6px 0; border-bottom: 1px solid var(--line); text-align: left; }
-    td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
-    .swatch { display: inline-block; width: 8px; height: 8px; margin-right: 6px; vertical-align: middle; }
-    .note { color: var(--muted); font-size: 12px; margin-top: 16px; }
-    @media (max-width: 980px) {
-      #app { grid-template-columns: 1fr; grid-template-rows: auto 70vh auto; }
-      aside, .spec { border: 0; border-bottom: 1px solid var(--line); }
+    th, td { padding: 5px 0; border-bottom: 1px solid var(--line); text-align: left; }
+    td:last-child { text-align: right; font-variant-numeric: tabular-nums; color: var(--accent); }
+    .hud { position: fixed; left: 16px; bottom: 16px; color: var(--muted); font-size: 12px; z-index: 2; pointer-events: none; }
+    @media (max-width: 820px) {
+      .bar, .spec { position: relative; width: auto; margin: 8px; }
+      body { overflow: auto; }
+      #view { position: relative; height: 70vh; }
     }
   </style>
 </head>
 <body>
-  <div id="app">
-    <aside>
-      <h1>AETHER Lane</h1>
-      <div class="sub">Solo kiosko de ingreso y salida. Cotas en mm.</div>
-
-      <label>Cuerpo</label>
-      <button class="opt active" data-k="body" data-v="pylon">Pylon — carril estándar<br><span class="sub">1620 × 360 × 300</span></button>
-      <button class="opt" data-k="body" data-v="compact">Compact VIP — isla reducida<br><span class="sub">1280 × 260 × 220</span></button>
-      <button class="opt" data-k="body" data-v="wall">Wall — para colgar<br><span class="sub">520 × 300 × 140</span></button>
-
-      <label>Cara</label>
-      <button class="opt active" data-k="face" data-v="ingreso">Ingreso — botón + ticket</button>
-      <button class="opt" data-k="face" data-v="salida">Salida — lector interno</button>
-
-      <label>Despiece <span id="exVal">0%</span></label>
-      <input id="explode" type="range" min="0" max="100" value="0" />
-
-      <label>Vista</label>
-      <button class="opt" data-k="view" data-v="iso">Isométrica</button>
-      <button class="opt" data-k="view" data-v="front">Alzado frontal</button>
-      <button class="opt" data-k="view" data-v="side">Perfil</button>
-      <button class="opt" data-k="view" data-v="top">Planta</button>
-
-      <label>Ayudas</label>
-      <button class="opt active" id="btnCotas">Cotas ON</button>
-      <button class="opt" id="btnIsla">Isla de 150 mm</button>
-    </aside>
-
-    <div id="view">
-      <div class="hud">Arrastra para orbitar · rueda para zoom · clic derecho pan</div>
+  <div id="view"></div>
+  <aside class="bar">
+    <h1>AETHER Lane</h1>
+    <p class="sub">Kiosko ingreso / salida · mm</p>
+    <label>Cuerpo</label>
+    <div class="row">
+      <button class="opt active" data-k="body" data-v="pylon">Pylon</button>
+      <button class="opt" data-k="body" data-v="compact">VIP</button>
+      <button class="opt" data-k="body" data-v="wall">Wall</button>
     </div>
-
-    <section class="spec">
-      <label style="margin-top:0">Modelo activo</label>
-      <h1 id="title">Pylon ingreso</h1>
-      <div class="sub" id="blurb"></div>
-      <table id="dims"></table>
-      <p class="note" id="reach"></p>
-      <p class="note">Fabricación: chapa 1,5 mm RAL 7021 + cara de aluminio anodizado. IP54 (Pylon/Compact), IP42 (Wall interior). Anclaje según ficha en docs/02-medidas.md.</p>
-    </section>
-  </div>
+    <label>Cara</label>
+    <div class="row">
+      <button class="opt active" data-k="face" data-v="ingreso">Ingreso</button>
+      <button class="opt" data-k="face" data-v="salida">Salida</button>
+    </div>
+    <label>Despiece <span id="exVal">0%</span></label>
+    <input id="explode" type="range" min="0" max="100" value="0" />
+    <label>Vista</label>
+    <div class="row">
+      <button class="opt" data-k="view" data-v="iso">Iso</button>
+      <button class="opt" data-k="view" data-v="front">Frente</button>
+      <button class="opt" data-k="view" data-v="side">Perfil</button>
+    </div>
+    <label>Ayudas</label>
+    <div class="row">
+      <button class="opt active" id="btnCotas">Cotas</button>
+      <button class="opt" id="btnIsla">Isla 150</button>
+    </div>
+  </aside>
+  <section class="spec">
+    <label style="margin-top:0">Modelo</label>
+    <h1 id="title">Pylon · ingreso</h1>
+    <p class="sub" id="blurb"></p>
+    <table id="dims"></table>
+  </section>
+  <div class="hud">Arrastra para orbitar · rueda zoom · clic derecho pan</div>
 
   <script type="importmap">
     { "imports": { "three": "https://unpkg.com/three@0.170.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/" } }
@@ -105,63 +97,80 @@
   <script type="module">
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 
     const SPECS = {
       pylon: {
-        name: "Pylon", H: 1620, Wf: 360, Wr: 260, D: 300, ph: 90, plate: [420, 12, 360],
-        lcd: 1280, btn: 1140, slot: 1040, scan: 1100, inter: 1460,
-        ckW: 280, ckH: 520, visor: 55, bolts: "4 × M12 e.e. 300×240"
+        name: "Pylon", H: 1620, Wf: 360, Wr: 300, D: 280, ph: 40, plate: [440, 14, 360],
+        lcd: 1320, btn: 1160, slot: 1040, scan: 1100, inter: 1460,
+        ckW: 300, ckH: 560, visor: 28, bolts: "4 × M12 · 300×240"
       },
       compact: {
-        name: "Compact VIP", H: 1280, Wf: 260, Wr: 200, D: 220, ph: 70, plate: [320, 10, 280],
-        lcd: 1160, btn: 1060, slot: 980, scan: 1030, inter: 1180,
-        ckW: 210, ckH: 460, visor: 40, bolts: "4 × M10 e.e. 220×180"
+        name: "Compact VIP", H: 1280, Wf: 280, Wr: 240, D: 220, ph: 32, plate: [340, 12, 280],
+        lcd: 1060, btn: 920, slot: 820, scan: 880, inter: 1160,
+        ckW: 240, ckH: 480, visor: 22, bolts: "4 × M10 · 220×180"
       },
       wall: {
-        name: "Wall", H: 520, Wf: 300, Wr: 300, D: 140, ph: 0, plate: [480, 6, 280],
-        lcd: 360, btn: 250, slot: 180, scan: 220, inter: 470,
-        ckW: 240, ckH: 400, visor: 36, bolts: "4 × M8 e.e. 240×180 · fondo a 820 mm (auto)"
+        name: "Wall", H: 520, Wf: 300, Wr: 300, D: 140, ph: 0, plate: [480, 8, 280],
+        lcd: 360, btn: 240, slot: 160, scan: 210, inter: 460,
+        ckW: 260, ckH: 420, visor: 18, bolts: "4 × M8 · fondo 820 mm"
       }
     };
 
     const state = { body: "pylon", face: "ingreso", explode: 0, cotas: true, isla: false };
 
-    const graphite = new THREE.MeshStandardMaterial({ color: 0x2a3036, metalness: 0.55, roughness: 0.38 });
-    const dark = new THREE.MeshStandardMaterial({ color: 0x161a1e, metalness: 0.4, roughness: 0.5 });
-    const alu = new THREE.MeshStandardMaterial({ color: 0xb9bec4, metalness: 0.85, roughness: 0.28 });
-    const glass = new THREE.MeshStandardMaterial({ color: 0x081018, metalness: 0.2, roughness: 0.12, transparent: true, opacity: 0.72 });
-    const cyan = new THREE.MeshStandardMaterial({ color: 0x3ee0d8, emissive: 0x1aa89f, emissiveIntensity: 1.2, roughness: 0.3 });
-    const amber = new THREE.MeshStandardMaterial({ color: 0xe8a020, emissive: 0x8a5a00, emissiveIntensity: 0.9 });
-    const steel = new THREE.MeshStandardMaterial({ color: 0x5c636a, metalness: 0.7, roughness: 0.4 });
-    const islaMat = new THREE.MeshStandardMaterial({ color: 0xc9a227, roughness: 0.9 });
+    const matBody = new THREE.MeshStandardMaterial({ color: 0x8d949c, metalness: 0.28, roughness: 0.42 });
+    const matFace = new THREE.MeshStandardMaterial({ color: 0x2c3238, metalness: 0.2, roughness: 0.55 });
+    const matCap = new THREE.MeshStandardMaterial({ color: 0xa4aab0, metalness: 0.35, roughness: 0.38 });
+    const matSteel = new THREE.MeshStandardMaterial({ color: 0x6e767e, metalness: 0.55, roughness: 0.4 });
+    const matCyan = new THREE.MeshStandardMaterial({ color: 0x3ee0d8, emissive: 0x3ee0d8, emissiveIntensity: 1.6, roughness: 0.25 });
+    const matAmber = new THREE.MeshStandardMaterial({ color: 0xe8a020, emissive: 0xe8a020, emissiveIntensity: 1.1, roughness: 0.3 });
+    const matSlot = new THREE.MeshStandardMaterial({ color: 0x111418, metalness: 0.1, roughness: 0.6 });
+    const matIsla = new THREE.MeshStandardMaterial({ color: 0xd4b43a, roughness: 0.85, metalness: 0.05 });
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0e1114);
-    scene.fog = new THREE.Fog(0x0e1114, 2800, 7200);
+    scene.background = new THREE.Color(0x1a2430);
 
     const camera = new THREE.PerspectiveCamera(32, 1, 10, 20000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
     renderer.shadowMap.enabled = true;
-    document.getElementById("view").prepend(renderer.domElement);
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.getElementById("view").appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.target.set(0, 800, 0);
+    controls.maxPolarAngle = Math.PI * 0.49;
 
-    scene.add(new THREE.AmbientLight(0x9aa4ae, 0.55));
-    const key = new THREE.DirectionalLight(0xffffff, 1.15);
-    key.position.set(900, 1800, 1200);
+    scene.add(new THREE.HemisphereLight(0xe8eef4, 0x3a4654, 1.35));
+    const key = new THREE.DirectionalLight(0xffffff, 2.1);
+    key.position.set(1400, 2200, 1600);
     key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.near = 200;
+    key.shadow.camera.far = 6000;
+    key.shadow.camera.left = key.shadow.camera.bottom = -1800;
+    key.shadow.camera.right = key.shadow.camera.top = 1800;
     scene.add(key);
-    scene.add(new THREE.DirectionalLight(0x3ee0d8, 0.25).translateX(-800).translateY(400));
+    const fill = new THREE.DirectionalLight(0xb9d4e8, 0.95);
+    fill.position.set(-1600, 900, 600);
+    scene.add(fill);
+    const rim = new THREE.DirectionalLight(0x7adfd8, 0.55);
+    rim.position.set(200, 800, -1400);
+    scene.add(rim);
 
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(2200, 48), new THREE.MeshStandardMaterial({ color: 0x1a1f24, roughness: 1 }));
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(8000, 8000),
+      new THREE.MeshStandardMaterial({ color: 0x151c24, roughness: 1, metalness: 0 })
+    );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     scene.add(ground);
-
-    const grid = new THREE.GridHelper(2400, 24, 0x2a3138, 0x1c2228);
+    const grid = new THREE.GridHelper(5000, 50, 0x6a8498, 0x3a5164);
+    grid.position.y = 1;
     scene.add(grid);
 
     let rig = new THREE.Group();
@@ -169,201 +178,207 @@
     const dimGroup = new THREE.Group();
     scene.add(dimGroup);
 
-    function taperedGeometry(wf, wr, d, h) {
-      const hwF = wf / 2, hwR = wr / 2, hd = d / 2;
-      const s = [
-        [-hwR, 0, -hd], [hwR, 0, -hd], [hwF, 0, hd], [-hwF, 0, hd],
-        [-hwR, h, -hd], [hwR, h, -hd], [hwF, h, hd], [-hwF, h, hd]
-      ];
-      const idx = [0,1,2, 0,2,3, 4,6,5, 4,7,6, 0,4,5, 0,5,1, 3,2,6, 3,6,7, 1,5,6, 1,6,2, 0,3,7, 0,7,4];
-      const g = new THREE.BufferGeometry();
-      const pos = [];
-      for (const i of idx) pos.push(...s[i]);
-      g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-      g.computeVertexNormals();
-      return g;
-    }
-
-    function box(w, h, d, mat, x, y, z) {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    function box(w, h, d, mat, x, y, z, r = 2) {
+      const m = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 2, r), mat);
       m.position.set(x, y, z);
       m.castShadow = true;
       m.receiveShadow = true;
       return m;
     }
 
-    function labelSprite(text) {
+    function edges(mesh, color = 0x5a6570) {
+      const e = new THREE.LineSegments(
+        new THREE.EdgesGeometry(mesh.geometry, 20),
+        new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.35 })
+      );
+      mesh.add(e);
+      return mesh;
+    }
+
+    function screenTex(face) {
       const c = document.createElement("canvas");
-      c.width = 512; c.height = 128;
-      const ctx = c.getContext("2d");
-      ctx.fillStyle = "rgba(14,17,20,0.82)";
-      ctx.fillRect(0, 0, 512, 128);
-      ctx.strokeStyle = "#3ee0d8";
-      ctx.strokeRect(1, 1, 510, 126);
-      ctx.fillStyle = "#e8edf1";
-      ctx.font = "48px Segoe UI, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(text, 256, 64);
-      const tex = new THREE.CanvasTexture(c);
-      const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-      spr.scale.set(280, 70, 1);
+      c.width = 512; c.height = 320;
+      const g = c.getContext("2d");
+      const lg = g.createLinearGradient(0, 0, 0, 320);
+      lg.addColorStop(0, "#0b1a22");
+      lg.addColorStop(1, "#061014");
+      g.fillStyle = lg;
+      g.fillRect(0, 0, 512, 320);
+      g.fillStyle = "#3ee0d8";
+      g.font = "bold 44px Segoe UI, sans-serif";
+      g.fillText(face === "ingreso" ? "BIENVENIDO" : "PRESENTE", 36, 90);
+      g.font = "28px Segoe UI, sans-serif";
+      g.fillStyle = "#9fd9d5";
+      g.fillText(face === "ingreso" ? "Tome su ticket" : "el codigo", 36, 140);
+      g.fillStyle = "#1d3a40";
+      g.fillRect(36, 180, 440, 8);
+      g.fillStyle = "#3ee0d8";
+      g.fillRect(36, 180, face === "ingreso" ? 180 : 280, 8);
+      g.font = "20px Segoe UI, sans-serif";
+      g.fillStyle = "#7a9098";
+      g.fillText("AETHER  ·  7\" LCD", 36, 250);
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      return t;
+    }
+
+    function sprite(text, scale = 140) {
+      const c = document.createElement("canvas");
+      c.width = 256; c.height = 96;
+      const g = c.getContext("2d");
+      g.clearRect(0, 0, 256, 96);
+      g.fillStyle = "#d7e2ea";
+      g.font = "600 42px Segoe UI, sans-serif";
+      g.textAlign = "left";
+      g.textBaseline = "middle";
+      g.fillText(text, 8, 48);
+      const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true }));
+      spr.scale.set(scale, scale * 0.37, 1);
+      spr.center.set(0, 0.5);
       return spr;
     }
 
-    function dimLine(from, to, text, offset) {
+    function heightRuler(h) {
       const g = new THREE.Group();
-      const pts = [from.clone().add(offset), to.clone().add(offset)];
-      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x3ee0d8 })));
-      const spr = labelSprite(text);
-      spr.position.copy(from).add(to).multiplyScalar(0.5).add(offset);
-      g.add(spr);
+      const x = -520;
+      const pts = [new THREE.Vector3(x, 0, 0), new THREE.Vector3(x, h, 0)];
+      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xc5d2dc })));
+      const ticks = [0, 500, 1000, 1500].filter((v) => v <= h + 20);
+      if (!ticks.includes(h)) ticks.push(h);
+      ticks.forEach((v) => {
+        g.add(new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x - 18, v, 0), new THREE.Vector3(x + 18, v, 0)]),
+          new THREE.LineBasicMaterial({ color: 0xc5d2dc })
+        ));
+        const lab = sprite(String(v), 120);
+        lab.position.set(x + 28, v, 0);
+        g.add(lab);
+      });
       return g;
     }
-
-    const parts = {};
 
     function build() {
       scene.remove(rig);
       rig = new THREE.Group();
       scene.add(rig);
       dimGroup.clear();
+
       const s = SPECS[state.body];
       const wall = state.body === "wall";
       const e = state.explode;
       const bodyY = wall ? 0 : s.ph;
-      const bodyH = wall ? s.H : s.H - s.ph - 16;
-      const ledMat = state.face === "ingreso" ? cyan : amber;
+      const bodyH = wall ? s.H : s.H - s.ph;
+      const accent = state.face === "ingreso" ? matCyan : matAmber;
 
-      parts.plate = box(s.plate[0], s.plate[1], s.plate[2], steel, 0, -s.plate[1] / 2 - e * 90, 0);
-      rig.add(parts.plate);
+      const plate = box(s.plate[0], s.plate[1], s.plate[2], matSteel, 0, s.plate[1] / 2 - e * 80, 0, 4);
+      edges(plate, 0x8a949c);
+      rig.add(plate);
 
       if (!wall) {
-        parts.plinth = box(s.Wf, s.ph, s.D, graphite, 0, s.ph / 2, 0);
-        rig.add(parts.plinth);
+        const plinth = box(s.Wf + 8, s.ph, s.D + 8, matBody, 0, s.ph / 2 + s.plate[1] * 0.5, 0, 3);
+        edges(plinth);
+        rig.add(plinth);
+        const kick = box(s.Wf - 40, 6, 8, matCyan, 0, 28, s.D / 2 + 2);
+        rig.add(kick);
       }
 
-      const shell = new THREE.Mesh(taperedGeometry(s.Wf, s.Wr, s.D, bodyH), graphite);
-      shell.position.set(0, bodyY, 0);
-      shell.castShadow = true;
-      parts.shell = shell;
+      const shell = box(s.Wf, bodyH, s.D, matBody, 0, bodyY + bodyH / 2 + (wall ? 0 : s.plate[1] * 0.35), 0, 6);
+      edges(shell);
       rig.add(shell);
 
-      const inner = new THREE.Mesh(taperedGeometry(s.Wf - 22, s.Wr - 22, s.D - 22, bodyH - 28), dark);
-      inner.position.set(0, bodyY + 14, 0);
-      rig.add(inner);
+      const cap = box(s.Wf + 8, 16, s.D + 10, matCap, 0, bodyY + bodyH + 6 + e * 90 + (wall ? 0 : s.plate[1] * 0.35), 4, 3);
+      edges(cap, 0x9aa3aa);
+      rig.add(cap);
 
-      const ckY = wall ? s.ckH / 2 + 50 : s.lcd - s.ckH * 0.35;
-      const cockpit = box(s.ckW, s.ckH, 26, dark, 0, ckY, s.D / 2 - 8 + e * 70);
-      rig.add(cockpit);
+      const yOff = wall ? 0 : s.plate[1] * 0.35;
+      const faceZ = s.D / 2 + 2 + e * 70;
+      const face = box(s.ckW, s.ckH, 16, matFace, 0, s.lcd - 40 + yOff, faceZ, 4);
+      edges(face, 0x111416);
+      rig.add(face);
 
-      const visor = box(s.ckW + 20, 8, s.visor, alu, 0, ckY + s.ckH / 2 + 6 + e * 110, s.D / 2 + s.visor / 2 - 8);
-      parts.visor = visor;
-      rig.add(visor);
-
-      const blade = box(10, bodyH - 70, 8, ledMat, -s.Wf / 2 + 9 - e * 100, bodyY + bodyH / 2, s.D / 2 - 4);
-      rig.add(blade);
-
-      const lcd = box(170, 105, 10, glass, 0, s.lcd + (wall ? 0 : 0), s.D / 2 + 6 + e * 160);
-      lcd.position.y = wall ? s.lcd : s.lcd;
+      const lcdMat = new THREE.MeshStandardMaterial({
+        map: screenTex(state.face),
+        emissive: 0x123038,
+        emissiveIntensity: 0.55,
+        roughness: 0.18,
+        metalness: 0.05
+      });
+      const lcd = new THREE.Mesh(new THREE.PlaneGeometry(150, 94), lcdMat);
+      lcd.position.set(0, s.lcd + yOff, faceZ + 9 + e * 90);
       rig.add(lcd);
-      const bezel = box(178, 113, 4, alu, 0, lcd.position.y, lcd.position.z - 8);
-      rig.add(bezel);
 
       if (state.face === "ingreso") {
-        const btn = new THREE.Mesh(new THREE.CylinderGeometry(25, 25, 16, 32), amber);
+        const btn = new THREE.Mesh(new THREE.CylinderGeometry(28, 28, 14, 40), matCyan);
         btn.rotation.x = Math.PI / 2;
-        btn.position.set(0, s.btn, s.D / 2 + 10 + e * 190);
+        btn.position.set(0, s.btn + yOff, faceZ + 12 + e * 110);
+        btn.castShadow = true;
         rig.add(btn);
-        const grille = box(120, 44, 4, alu, 0, s.slot + 22, s.D / 2 + 4 + e * 200);
-        rig.add(grille);
-        const slot = box(90, 16, 14, dark, 0, s.slot, s.D / 2 + 8 + e * 210);
+        const glow = new THREE.PointLight(0x3ee0d8, 1.4, 380);
+        glow.position.copy(btn.position);
+        rig.add(glow);
+        const slot = box(118, 22, 14, matSlot, 0, s.slot + yOff, faceZ + 10 + e * 130, 2);
         rig.add(slot);
+        const lip = box(126, 6, 4, matCap, 0, s.slot + 16 + yOff, faceZ + 16 + e * 130, 1);
+        rig.add(lip);
       } else {
-        const win = box(90, 46, 8, glass, 0, s.scan, s.D / 2 + 8 + e * 190);
+        const win = box(120, 52, 10, matSlot, 0, s.scan + yOff, faceZ + 10 + e * 110, 2);
         rig.add(win);
-        const ring = box(110, 62, 3, ledMat, 0, s.scan, s.D / 2 + 2 + e * 175);
+        const ring = box(132, 64, 3, matCyan, 0, s.scan + yOff, faceZ + 5 + e * 100, 1);
         rig.add(ring);
+        const glow = new THREE.PointLight(0x3ee0d8, 1.2, 360);
+        glow.position.set(0, s.scan + yOff, faceZ + 20);
+        rig.add(glow);
       }
 
-      const inter = box(70, 28, 6, alu, 0, s.inter, s.D / 2 + 2 + e * 130);
-      rig.add(inter);
+      const blade = box(6, bodyH * 0.55, 8, accent, s.Wf / 2 - 4, bodyY + bodyH * 0.42 + yOff, s.D / 2 + 1 - e * 40, 1);
+      rig.add(blade);
 
-      const door = box(s.Wr - 36, bodyH - 90, 6, dark, 0, bodyY + bodyH / 2, -s.D / 2 - 4 - e * 140);
-      rig.add(door);
-
-      const printer = box(Math.min(s.Wf, 210) - 40, 70, 90, steel, 0, (state.face === "ingreso" ? s.slot : s.scan) - 10, e * 40);
-      printer.visible = e > 0.08;
-      rig.add(printer);
-
-      const psu = box(120, 50, 60, steel, 40 + e * 150, bodyY + 120, -20);
-      psu.visible = e > 0.12;
-      rig.add(psu);
+      if (e > 0.08) {
+        rig.add(box(160, 70, 90, matSteel, 0, s.slot + yOff, -20 + e * 40, 3));
+        rig.add(box(110, 46, 54, matSteel, 80 + e * 140, bodyY + 140 + yOff, -30, 3));
+      }
 
       if (state.isla && !wall) {
-        const isle = box(700, 150, 2200, islaMat, 0, -75 - s.plate[1], 200);
-        isle.material = islaMat;
+        const isle = box(720, 150, 2400, matIsla, 0, -75, 180, 2);
         rig.add(isle);
-        rig.position.y = 150 + s.plate[1];
+        rig.position.y = 150;
       } else {
         rig.position.y = 0;
       }
 
-      if (state.cotas) {
-        const top = wall ? s.H : s.H;
-        dimGroup.add(dimLine(new THREE.Vector3(-s.Wf / 2, 0, s.D / 2), new THREE.Vector3(-s.Wf / 2, top, s.D / 2), `${s.H} mm`, new THREE.Vector3(-180, 0, 40)));
-        dimGroup.add(dimLine(new THREE.Vector3(-s.Wf / 2, 40, s.D / 2), new THREE.Vector3(s.Wf / 2, 40, s.D / 2), `${s.Wf} mm`, new THREE.Vector3(0, -50, 80)));
-        dimGroup.add(dimLine(new THREE.Vector3(s.Wf / 2, 80, -s.D / 2), new THREE.Vector3(s.Wf / 2, 80, s.D / 2), `${s.D} mm`, new THREE.Vector3(160, 0, 0)));
-        const interact = state.face === "ingreso" ? s.slot : s.scan;
-        dimGroup.add(dimLine(new THREE.Vector3(s.Wf / 2, 0, s.D / 2), new THREE.Vector3(s.Wf / 2, interact, s.D / 2), `alcance ${interact} mm`, new THREE.Vector3(90, 0, 50)));
-      }
+      if (state.cotas) dimGroup.add(heightRuler(s.H + (wall ? 0 : s.plate[1])));
 
       fillSpec(s);
-      fitCamera(s);
     }
 
     function fillSpec(s) {
-      const face = state.face;
-      document.getElementById("title").textContent = `${s.name} · ${face}`;
-      document.getElementById("blurb").textContent = face === "ingreso"
-        ? "LCD 7\" + botón Ø50 + rejilla de impresora 80 mm."
-        : "LCD 7\" + ventana de lector de barras/QR interno.";
+      document.getElementById("title").textContent = `${s.name} · ${state.face}`;
+      document.getElementById("blurb").textContent = state.face === "ingreso"
+        ? "LCD 7\" + botón + ticket 80 mm"
+        : "LCD 7\" + lector barcode interno";
       const rows = [
         ["Alto", `${s.H} mm`],
-        ["Ancho cara", `${s.Wf} mm`],
-        ["Ancho trasero", `${s.Wr} mm`],
+        ["Frente", `${s.Wf} mm`],
         ["Fondo", `${s.D} mm`],
-        ["LCD 7\" centro", `${s.lcd} mm`],
-        [face === "ingreso" ? "Botón" : "Ventana barcode", `${face === "ingreso" ? s.btn : s.scan} mm`],
-        [face === "ingreso" ? "Slot ticket" : "—", face === "ingreso" ? `${s.slot} mm` : "sin impresora"],
-        ["Anclaje", s.bolts]
+        ["LCD", `${s.lcd} mm`],
+        [state.face === "ingreso" ? "Botón" : "Lector", `${state.face === "ingreso" ? s.btn : s.scan} mm`],
+        [state.face === "ingreso" ? "Slot" : "Anclaje", state.face === "ingreso" ? `${s.slot} mm` : s.bolts]
       ];
       document.getElementById("dims").innerHTML = rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("");
-      const extra = state.body === "wall"
-        ? "Instalación auto: fondo del cuerpo a 820 mm sobre isla → slot a 1000 mm, LCD a 1180 mm. Lobby peatonal: fondo a 1100 mm."
-        : "Cotas sobre isla 0. Desde piso de carril sume 150 mm de isla. Ticket / lector quedan en 950–1150 mm de alcance de ventana.";
-      document.getElementById("reach").textContent = extra;
-    }
-
-    function fitCamera(s) {
-      const h = state.body === "wall" ? 900 : s.H;
-      controls.target.set(0, h * 0.52, 0);
     }
 
     function setView(v) {
       const s = SPECS[state.body];
-      const h = s.H * 0.55;
-      const dist = Math.max(s.H, 900) * 1.8;
-      if (v === "front") camera.position.set(0, h, dist);
-      else if (v === "side") camera.position.set(dist, h, 0);
-      else if (v === "top") camera.position.set(0, dist * 1.2, 1);
-      else camera.position.set(dist * 0.72, s.H * 0.9, dist * 0.86);
+      const h = s.H * 0.45;
+      const dist = Math.max(s.H * 2.35, 2800);
+      if (v === "front") camera.position.set(0, h + 120, dist * 0.92);
+      else if (v === "side") camera.position.set(dist * 0.92, h + 120, 80);
+      else camera.position.set(dist * 0.72, s.H * 0.58, dist * 0.95);
       controls.target.set(0, h, 0);
     }
 
     function resize() {
-      const el = document.getElementById("view");
-      const w = el.clientWidth, h = el.clientHeight;
+      const w = innerWidth, h = innerHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -387,7 +402,6 @@
     document.getElementById("btnCotas").addEventListener("click", (ev) => {
       state.cotas = !state.cotas;
       ev.currentTarget.classList.toggle("active", state.cotas);
-      ev.currentTarget.textContent = state.cotas ? "Cotas ON" : "Cotas OFF";
       build();
     });
     document.getElementById("btnIsla").addEventListener("click", (ev) => {
@@ -397,16 +411,14 @@
     });
 
     window.addEventListener("resize", resize);
-    setView("iso");
     resize();
+    setView("iso");
     build();
-
-    function tick() {
+    (function tick() {
       controls.update();
       renderer.render(scene, camera);
       requestAnimationFrame(tick);
-    }
-    tick();
+    })();
   </script>
 </body>
 </html>
