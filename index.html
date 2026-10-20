@@ -45,7 +45,7 @@
   <div id="view"></div>
   <aside class="bar">
     <h1>AETHER Splice</h1>
-    <p class="sub">Cuerpo partido · puertas en su bisagra</p>
+    <p class="sub">Cuerpo cuadrado · panel hundido</p>
     <label>Cuerpo</label>
     <div class="row">
       <button class="opt active" data-k="body" data-v="pylon">Pylon</button>
@@ -95,22 +95,22 @@
 
     const SPECS = {
       pylon: {
-        name: "Pylon", H: 1620, Wf: 380, Wr: 240, D: 300, ph: 36,
-        plate: [460, 12, 380], lcd: 1280, btn: 1120, slot: 1000, scan: 1080,
-        faceH: 640, bolts: "4 × M12 · 320×250",
-        hingeFront: "izquierda vertical", hingeRear: "derecha trasera"
+        name: "Pylon", H: 1620, Wf: 360, Wr: 360, D: 320, ph: 80,
+        plate: [420, 12, 380], lcd: 1280, btn: 1120, slot: 1000, scan: 1080,
+        faceH: 620, bolts: "4 × M12 · 300×260",
+        hingeFront: "izquierda, dentro del hueco", hingeRear: "derecha trasera"
       },
       compact: {
-        name: "Compact VIP", H: 1280, Wf: 290, Wr: 190, D: 230, ph: 28,
-        plate: [360, 10, 290], lcd: 1020, btn: 880, slot: 780, scan: 850,
-        faceH: 540, bolts: "4 × M10 · 230×180",
-        hingeFront: "izquierda vertical", hingeRear: "derecha trasera"
+        name: "Compact VIP", H: 1280, Wf: 280, Wr: 280, D: 240, ph: 60,
+        plate: [340, 10, 300], lcd: 1020, btn: 880, slot: 780, scan: 850,
+        faceH: 520, bolts: "4 × M10 · 220×180",
+        hingeFront: "izquierda, dentro del hueco", hingeRear: "derecha trasera"
       },
       wall: {
-        name: "Wall", H: 540, Wf: 320, Wr: 320, D: 150, ph: 0,
-        plate: [500, 8, 300], lcd: 360, btn: 230, slot: 150, scan: 210,
-        faceH: 480, bolts: "4 × M8 · fondo 820 mm",
-        hingeFront: "superior (abre hacia arriba)", hingeRear: "sin puerta trasera"
+        name: "Wall", H: 540, Wf: 300, Wr: 300, D: 150, ph: 0,
+        plate: [480, 8, 280], lcd: 360, btn: 230, slot: 150, scan: 210,
+        faceH: 460, bolts: "4 × M8 · fondo 820 mm",
+        hingeFront: "superior, dentro del hueco", hingeRear: "sin puerta trasera"
       }
     };
 
@@ -221,22 +221,8 @@
       spr.center.set(0, 0.5);
       return spr;
     }
-    function spliceProfile(wf, wr, d) {
-      const s = new THREE.Shape();
-      s.moveTo(-wf / 2, d * 0.5);
-      s.lineTo(wf / 2, d * 0.5);
-      s.lineTo(wr / 2, -d * 0.18);
-      s.lineTo(0, -d * 0.5);
-      s.lineTo(-wr / 2, -d * 0.18);
-      s.closePath();
-      return s;
-    }
-    function mastGeo(wf, wr, d, h) {
-      const geo = new THREE.ExtrudeGeometry(spliceProfile(wf, wr, d), {
-        depth: h, bevelEnabled: true, bevelThickness: 5, bevelSize: 5, bevelSegments: 1, curveSegments: 1
-      });
-      geo.rotateX(-Math.PI / 2);
-      return geo;
+    function squareMast(wf, d, h, r = 6) {
+      return new RoundedBoxGeometry(wf, h, d, 2, r);
     }
 
     function build() {
@@ -258,34 +244,48 @@
       rig.add(plate);
       nodes.plate = plate;
 
+      const bodyY = y0 + (wall ? bodyH / 2 : s.ph + bodyH / 2);
       if (!wall) {
-        const plinth = mesh(mastGeo(s.Wf + 10, s.Wr + 10, s.D + 8, s.ph), matBody, 0, y0, 0);
-        plinth.castShadow = true;
+        const plinth = rbox(s.Wf, s.ph, s.D, matBody, 0, y0 + s.ph / 2, 0, 4);
+        edges(plinth);
         rig.add(plinth);
-        rig.add(rbox(s.Wf - 50, 5, 7, matCyan, 0, y0 + 14, s.D / 2 - 2, 1));
+        rig.add(rbox(s.Wf - 40, 6, 8, matCyan, 0, y0 + 18, s.D / 2 + 1, 1));
       }
 
-      const shell = mesh(mastGeo(s.Wf, s.Wr, s.D, bodyH), matBody, 0, y0 + (wall ? 0 : s.ph), 0);
+      const shell = mesh(squareMast(s.Wf, s.D, bodyH, 5), matBody, 0, bodyY, 0);
       shell.castShadow = true;
       shell.receiveShadow = true;
       edges(shell);
       rig.add(shell);
       nodes.shell = shell;
 
-      const cap = mesh(mastGeo(s.Wf + 6, s.Wr + 4, s.D + 8, 14), matCap, 0, y0 + (wall ? bodyH : s.ph + bodyH), 0);
-      cap.rotation.x = -0.08;
-      cap.position.z += 8;
-      cap.castShadow = true;
+      const cap = rbox(s.Wf + 4, 18, s.D + 8, matCap, 0, y0 + (wall ? bodyH : s.ph + bodyH) + 6, 4, 3);
       edges(cap, 0x9aa3aa);
       rig.add(cap);
       nodes.cap = cap;
 
-      const faceW = s.Wf - 36;
+      const faceW = s.Wf - 56;
       const faceH = s.faceH;
       const faceY = wall
-        ? y0 + 40 + faceH / 2
+        ? y0 + 36 + faceH / 2
         : (s.lcd + (state.face === "ingreso" ? s.slot : s.scan)) / 2;
-      const faceZ = s.D / 2 + 2;
+      const faceZ = s.D / 2 + 1;
+
+      const postW = 22;
+      const post = (x) => {
+        const p = rbox(postW, faceH + 28, 36, matBody, x, faceY, s.D / 2 + 10, 2);
+        edges(p);
+        rig.add(p);
+      };
+      post(-(s.Wf / 2 - postW / 2 - 2));
+      post(s.Wf / 2 - postW / 2 - 2);
+      const visor = rbox(s.Wf, 24, 78, matCap, 0, faceY + faceH / 2 + 20, s.D / 2 + 18, 2);
+      edges(visor, 0x9aa3aa);
+      visor.castShadow = true;
+      rig.add(visor);
+      nodes.visor = visor;
+      const sill = rbox(s.Wf - 20, 16, 36, matCap, 0, faceY - faceH / 2 - 10, s.D / 2 - 4, 2);
+      rig.add(sill);
 
       const pivotY = wall ? faceY + faceH / 2 : faceY;
       const frontPivot = new THREE.Group();
@@ -297,7 +297,7 @@
       rig.add(frontPivot);
       nodes.frontPivot = frontPivot;
 
-      const frontDoor = rbox(faceW, faceH, 16, matFace, wall ? 0 : faceW / 2, wall ? -faceH / 2 : 0, 8, 4);
+      const frontDoor = rbox(faceW, faceH, 14, matFace, wall ? 0 : faceW / 2, wall ? -faceH / 2 : 0, 7, 3);
       frontDoor.userData.part = "front";
       clickables.push(frontDoor);
       frontPivot.add(frontDoor);
@@ -342,7 +342,7 @@
         frontPivot.add(frame);
       }
 
-      const blade = rbox(7, bodyH * 0.72, 8, accent, s.Wf / 2 - 10, y0 + (wall ? bodyH * 0.48 : s.ph + bodyH * 0.45), s.D / 2 - 8, 1);
+      const blade = rbox(6, faceH + 20, 6, accent, s.Wf / 2 + 1, faceY, s.D / 2 + 8, 1);
       rig.add(blade);
       nodes.blade = blade;
 
@@ -403,12 +403,12 @@
         : "LCD 7\" · lector interno tras ventana";
       document.getElementById("dims").innerHTML = [
         ["Alto", `${s.H} mm`],
-        ["Frente / cola", `${s.Wf} / ${s.Wr} mm`],
+        ["Frente × fondo", `${s.Wf} × ${s.D} mm`],
         ["Fondo", `${s.D} mm`],
         ["Bisagra cara", s.hingeFront],
         ["Bisagra servicio", s.hingeRear]
       ].map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("");
-      document.getElementById("unique").textContent = "Planta en punta (no caja). Casco y servicio se abren en su bisagra real. El Wall abre la cara hacia arriba.";
+      document.getElementById("unique").textContent = "Cuerpo cuadrado. El panel queda dentro del hueco: visera + jambas lo protegen, no va volado.";
       document.getElementById("hingeHint").textContent = wall
         ? "Wall: clic en la cara — bisagra superior, abre como visera."
         : "Clic en la cara (bisagra izq.) o en la tapa trasera (bisagra der.).";
