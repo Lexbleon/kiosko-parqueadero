@@ -13,12 +13,13 @@ Los gabinetes locales (CI24, Security Access, VIPPARK) son cajas rectas de inox 
 
 ## Concepto
 
-**AETHER** = un **filo de vehículo**, no un armario.
+**AETHER Splice** = un **cuerpo partido**, no un armario ni un totem rectangular.
 
-- Planta trapezoidal: ancha hacia el conductor, estrecha hacia la talanquera.
-- **Cockpit hundido** de 28 mm: la ceja sustituye el parasol tipo hongo.
-- **Blade LED** vertical en el canto de ataque (cian ingreso / ámbar salida).
-- Una sola familia de cara: se cambia la hoja frontal y el interior.
+- Planta en punta: ancha al conductor, afilada hacia la talanquera (no caja).
+- **Puerta cara** con bisagra real: en Pylon/VIP abre a la izquierda (no invade el auto); en Wall abre hacia arriba como visera.
+- **Puerta servicio** trasera con bisagra derecha.
+- **Falla LED** (blade) en el canto: firma de la familia, cian ingreso / ámbar salida.
+- El despiece mueve cada puerta desde su bisagra, no las hace flotar.
 
 ## Tres cuerpos, dos caras
 
