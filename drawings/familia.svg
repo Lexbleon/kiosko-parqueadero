@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 640" width="1100" height="640">
+  <rect width="1100" height="640" fill="#0e1114"/>
+  <style>
+    .t { fill:#e8edf1; font: 600 18px Segoe UI, sans-serif; }
+    .s { fill:#8b959e; font: 12px Segoe UI, sans-serif; }
+    .d { fill:#3ee0d8; font: 11px Segoe UI, sans-serif; }
+    .b { fill:#2a3036; stroke:#5c636a; }
+    .a { fill:#b9bec4; }
+    .g { fill:#161a1e; }
+  </style>
+  <text x="40" y="36" class="t">Familia AETHER  misma cara, tres cuerpos</text>
+  <text x="40" y="56" class="s">Escala 1:20 aproximada. Cotas en mm sobre isla, Wall mostrado a altura de montaje auto (fondo 820).</text>
+
+  <!-- PYLON -->
+  <g transform="translate(160,580) scale(0.28)">
+    <rect class="b" x="-180" y="-1620" width="360" height="1530"/>
+    <rect class="b" x="-180" y="-90" width="360" height="90"/>
+    <rect class="a" x="-140" y="-1440" width="280" height="520"/>
+    <rect class="g" x="-85" y="-1332" width="170" height="105"/>
+    <rect fill="#3ee0d8" x="-180" y="-1500" width="16" height="1200"/>
+    <text x="-80" y="80" class="d" transform="scale(3.5)">PYLON 1620×360×300</text>
+  </g>
+
+  <!-- COMPACT -->
+  <g transform="translate(480,580) scale(0.28)">
+    <rect class="b" x="-130" y="-1280" width="260" height="1210"/>
+    <rect class="b" x="-130" y="-70" width="260" height="70"/>
+    <rect class="a" x="-105" y="-1280" width="210" height="460" transform="translate(0, -20)"/>
+    <rect class="a" x="-105" y="-1160" width="210" height="460"/>
+    <rect class="g" x="-85" y="-1212" width="170" height="105"/>
+    <rect fill="#3ee0d8" x="-130" y="-1200" width="14" height="980"/>
+    <text x="-90" y="80" class="d" transform="scale(3.5)">COMPACT VIP 1280×260×220</text>
+  </g>
+
+  <!-- WALL at 820 -->
+  <g transform="translate(820,580) scale(0.28)">
+    <line stroke="#3ee0d8" stroke-dasharray="12 10" x1="-80" y1="0" x2="-80" y2="-2000"/>
+    <rect class="b" x="-150" y="-1340" width="300" height="520"/>
+    <rect class="a" x="-120" y="-1300" width="240" height="400"/>
+    <rect class="g" x="-85" y="-1180" width="170" height="105"/>
+    <rect fill="#2a3036" x="-200" y="-1320" width="40" height="480"/>
+    <text x="-70" y="80" class="d" transform="scale(3.5)">WALL 520×300×140  ·  fondo 820</text>
+  </g>
+</svg>
